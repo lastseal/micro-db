@@ -50,6 +50,9 @@ db = Database()
 def connect(handle):
     def decorator(*args, **kwargs):
         try:
+            
+            logging.debug("connecting")
+
             with db.connect():
                 with db.cursor():
                     handle(*args, **kwargs)
