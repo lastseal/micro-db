@@ -3,7 +3,6 @@
 import psycopg2.extras
 import psycopg2
 import logging
-import pandas as pd
 import os
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
