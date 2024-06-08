@@ -30,7 +30,8 @@ class Database:
         return self.conn
     
     def close(self):
-        self.conn.close()
+        if hasattr(self, "conn"):
+            self.conn.close()
         logging.debug("database connection closed")
     
     def cursor(self):
