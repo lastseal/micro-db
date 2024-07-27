@@ -3,6 +3,7 @@
 import psycopg2.extras
 import psycopg2
 import logging
+import asyncio
 import os
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
