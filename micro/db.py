@@ -43,11 +43,11 @@ class Database:
         self.cur.execute(query, params)
         return self.cur
 
-    def listen(self, channel):
+    def listen(self, channel, handle):
         logging.debug("listen on %s", channel)
         self.cur.execute(f"LISTEN {channel};")
 
-        def handle():
+        def wrapper():
             self.conn.poll()
             for notify in self.conn.notifies:
                 try:
@@ -58,7 +58,7 @@ class Database:
 
             self.conn.notifies.clear()
 
-        return handle
+        return wrapper
 
 ##
 #
@@ -89,6 +89,6 @@ def query(sql, params=None):
 def notify(channel):
     def decorator(handle):
         loop = asyncio.get_event_loop()
-        loop.add_reader(conn, db.listen(channel))
+        loop.add_reader(conn, db.listen(channel, handle))
         loop.run_forever()
     return decorator
