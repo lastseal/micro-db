@@ -90,6 +90,6 @@ def query(sql, params=None):
 def notify(channel):
     def decorator(handle):
         loop = asyncio.get_event_loop()
-        loop.add_reader(conn, db.listen(channel, handle))
+        loop.add_reader(db.conn, db.listen(channel, handle))
         loop.run_forever()
     return decorator
