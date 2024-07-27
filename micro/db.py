@@ -43,6 +43,21 @@ class Database:
         self.cur.execute(query, params)
         return self.cur
 
+    def listen(self, channel)
+        logging.debug("listen on %s", channel)
+        self.cur.execute(f"LISTEN {channel};")
+
+        def wrapper():
+            self.conn.poll()
+            for notify in self.conn.notifies:
+                try:
+                    logging.debug("notify: %s", notify)
+                    handle(notify.payload)
+                except Exception as ex:
+                    logging.error(ex)
+
+            self.conn.notifies.clear()
+
 ##
 #
     
