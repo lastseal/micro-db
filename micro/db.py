@@ -45,21 +45,27 @@ class Database:
         return self.cur
 
     def listen(self, channel, handle):
+
         logging.debug("listen on %s", channel)
+        self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self.cur.execute(f"LISTEN {channel};")
 
-        def wrapper():
+        try:
             self.conn.poll()
             for notify in self.conn.notifies:
                 try:
                     logging.debug("notify: %s", notify)
-                    handle(notify.payload)
+                    payload = notify.payload
+                    handle(payload['event'], payload['message'])
                 except Exception as ex:
                     logging.error(ex)
 
             self.conn.notifies.clear()
-
-        return wrapper
+        except Exception as ex:
+            logging.error(ex)
+        finally:
+            self.cur.close()
+            self.conn.close()
 
 ##
 #
@@ -87,9 +93,12 @@ def query(sql, params=None):
 ##
 #
 
-def notify(channel):
+def listen(channel):
+
+    client = Database()
+    client.connect()
+    
     def decorator(handle):
-        loop = asyncio.get_event_loop()
-        loop.add_reader(db.conn, db.listen(channel, handle))
-        loop.run_forever()
+        client.listen(channel, handle)
+        
     return decorator
