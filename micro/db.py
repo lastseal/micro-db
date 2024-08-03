@@ -47,30 +47,23 @@ class Database:
     def listen(self, channel, handle):
 
         logging.debug("listen on %s", channel)
+        
         self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self.cur.execute(f"LISTEN {channel};")
+        self.conn.poll()
+        
+        for notify in self.conn.notifies:
+            try:
+                logging.debug("notify: %s", notify)
+                payload = notify.payload
+                handle(payload['event'], payload['message'])
+            except Exception as ex:
+                logging.error(ex)
 
-        try:
-            self.conn.poll()
-            for notify in self.conn.notifies:
-                try:
-                    logging.debug("notify: %s", notify)
-                    payload = notify.payload
-                    handle(payload['event'], payload['message'])
-                except Exception as ex:
-                    logging.error(ex)
-
-            self.conn.notifies.clear()
-        except Exception as ex:
-            logging.error(ex)
-        finally:
-            self.cur.close()
-            self.conn.close()
+        self.conn.notifies.clear()
 
 ##
 #
-    
-db = Database()
 
 def connect(handle):
     def decorator(*args, **kwargs):
@@ -78,7 +71,7 @@ def connect(handle):
             logging.debug("connecting")
             with db.connect():
                 with db.cursor():
-                    handle(*args, **kwargs)
+                    handle(db, *args, **kwargs)
         finally:
             db.close()
 
@@ -87,18 +80,29 @@ def connect(handle):
 ##
 #
 
-def query(sql, params=None):
-    return db.execute(sql, params)
+def query(handle):
+    def decorator(sql, params=None):
+        try:
+            logging.debug("connecting")
+            with db.connect():
+                with db.cursor():
+                    res = db.execute(sql, params)
+                    handle(res)
+        finally:
+            db.close()
+
+    return decorator
 
 ##
 #
 
 def listen(channel):
-
-    client = Database()
-    client.connect()
-    
     def decorator(handle):
-        client.listen(channel, handle)
+        try:
+            db = Database()
+            db.connect()
+            db.listen(channel, handle)
+        finally:
+            db.close()
         
     return decorator
