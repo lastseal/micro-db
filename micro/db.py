@@ -98,12 +98,18 @@ def query(handle):
 
 def listen(channel):
     def decorator(handle):
-        try:
-            db = Database()
-            with db.connect():
-                with db.cursor():
-                    db.listen(channel, handle)
-        finally:
-            db.close()
+
+        def wrapper():
+            try:
+                db = Database()
+                with db.connect():
+                    with db.cursor():
+                        db.listen(channel, handle)
+            finally:
+                db.close()
+
+        loop = asyncio.get_event_loop()
+        loop.add_reader(conn, notify)
+        loop.run_forever()
         
     return decorator
