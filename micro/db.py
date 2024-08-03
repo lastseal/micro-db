@@ -101,7 +101,7 @@ def listen(channel):
                     try:
                         logging.debug("notify: %s", notify)
                         payload = json.loads(notify.payload)
-                        handle(payload['event'], payload['message'])
+                        handle(payload.get('event'), payload.get('message'))
                     except Exception as ex:
                         logging.error(ex)
         
