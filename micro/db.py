@@ -105,10 +105,10 @@ def listen(channel):
             def wrapper():
                 db.listen(channel, handle)
             
-            with db.connect():
+            with db.connect() as conn:
                 with db.cursor():
                     loop = asyncio.get_event_loop()
-                    loop.add_reader(self.db.conn, wrapper)
+                    loop.add_reader(conn, wrapper)
                     loop.run_forever()
         finally:
             db.close()
