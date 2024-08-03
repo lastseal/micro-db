@@ -4,6 +4,7 @@ import psycopg2.extras
 import psycopg2
 import logging
 import time
+import json
 import os
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
@@ -99,7 +100,7 @@ def listen(channel):
                 for notify in conn.notifies:
                     try:
                         logging.debug("notify: %s", notify)
-                        payload = notify.payload
+                        payload = json.loads(notify.payload)
                         handle(payload['event'], payload['message'])
                     except Exception as ex:
                         logging.error(ex)
