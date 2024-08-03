@@ -44,23 +44,6 @@ class Database:
         self.cur.execute(query, params)
         return self.cur
 
-    def listen(self, channel, handle):
-
-        logging.debug("listen on %s", channel)
-        
-        self.cur.execute(f"LISTEN {channel};")
-        self.conn.poll()
-        
-        for notify in self.conn.notifies:
-            try:
-                logging.debug("notify: %s", notify)
-                payload = notify.payload
-                handle(payload['event'], payload['message'])
-            except Exception as ex:
-                logging.error(ex)
-
-        self.conn.notifies.clear()
-
 ##
 #
 
