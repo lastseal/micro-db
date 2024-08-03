@@ -48,7 +48,6 @@ class Database:
 
         logging.debug("listen on %s", channel)
         
-        self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self.cur.execute(f"LISTEN {channel};")
         self.conn.poll()
         
@@ -101,12 +100,28 @@ def listen(channel):
 
         try:
             db = Database()
-
-            def wrapper():
-                db.listen(channel, handle)
             
             with db.connect() as conn:
-                with db.cursor():
+                conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+                with db.cursor() as cur:
+
+                    logging.debug("listen on %s", channel)
+        
+                    cur.execute(f"LISTEN {channel};")
+
+                    def wrapper():
+                        conn.poll()
+                        
+                        for notify in self.conn.notifies:
+                            try:
+                                logging.debug("notify: %s", notify)
+                                payload = notify.payload
+                                handle(payload['event'], payload['message'])
+                            except Exception as ex:
+                                logging.error(ex)
+                
+                        conn.notifies.clear()
+                    
                     loop = asyncio.get_event_loop()
                     loop.add_reader(conn, wrapper)
                     loop.run_forever()
