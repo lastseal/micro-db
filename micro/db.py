@@ -81,34 +81,35 @@ def query(handle):
 def listen(channel):
     def decorator(handle):
 
+        logging.debug("listen on %s", channel)
+        
         try:
             db = Database()
-            
-            with db.connect() as conn:
-                conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-                with db.cursor() as cur:
 
-                    logging.debug("listen on %s", channel)
+            conn = db.connect()
+            conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         
-                    cur.execute(f"LISTEN {channel};")
+            cursor = conn.cursor()
+            cursor.execute(f"LISTEN {channel};")
 
-                    def wrapper():
-                        conn.poll()
-                        
-                        for notify in self.conn.notifies:
-                            try:
-                                logging.debug("notify: %s", notify)
-                                payload = notify.payload
-                                handle(payload['event'], payload['message'])
-                            except Exception as ex:
-                                logging.error(ex)
+            while True:
+
+                conn.poll()
                 
-                        conn.notifies.clear()
+                for notify in conn.notifies:
+                    try:
+                        logging.debug("notify: %s", notify)
+                        payload = notify.payload
+                        handle(payload['event'], payload['message'])
+                    except Exception as ex:
+                        logging.error(ex)
+        
+                conn.notifies.clear()
+                time.sleep(1)
                     
-                    loop = asyncio.get_event_loop()
-                    loop.add_reader(conn, wrapper)
-                    loop.run_forever()
         finally:
-            db.close()
+            logging.info("database connection closed")
+            cursor.close()
+            conn.close()
         
     return decorator
