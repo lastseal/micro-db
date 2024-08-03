@@ -100,8 +100,9 @@ def listen(channel):
     def decorator(handle):
         try:
             db = Database()
-            db.connect()
-            db.listen(channel, handle)
+            with db.connect():
+                with db.cursor():
+                    db.listen(channel, handle)
         finally:
             db.close()
         
