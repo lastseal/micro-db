@@ -18,6 +18,10 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
 class Database:
 
+    def __init__(self):
+        self.conn = None
+        self.cur = None
+
     def connect(self):
         self.conn = psycopg2.connect(
             user=POSTGRES_USER,
@@ -32,11 +36,17 @@ class Database:
         return self.conn
     
     def close(self):
-        if hasattr(self, "conn"):
+        if self.cur is not None:
+            self.cur.close()
+            
+        if self.conn is not None:
             self.conn.close()
+            
         logging.debug("database connection closed")
     
     def cursor(self):
+        if self.conn is None:
+            self.connect()
         self.cur = self.conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
         return self.cur
     
@@ -50,6 +60,7 @@ class Database:
 
 def connect(handle):
     def decorator(*args, **kwargs):
+        db = Database()
         try:
             logging.debug("connecting")
             with db.connect():
@@ -65,6 +76,7 @@ def connect(handle):
 
 def query(handle):
     def decorator(sql, params=None):
+        db = Database()
         try:
             logging.debug("connecting")
             with db.connect():
