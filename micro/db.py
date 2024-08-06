@@ -74,19 +74,15 @@ def connect(handle):
 ##
 #
 
-def query(handle):
-    def decorator(sql, params=None):
-        db = Database()
-        try:
-            logging.debug("connecting")
-            with db.connect():
-                with db.cursor():
-                    res = db.execute(sql, params)
-                    handle(res)
-        finally:
-            db.close()
-
-    return decorator
+def query(sql, params):
+    db = Database()
+    try:
+        logging.debug("connecting")
+        with db.connect():
+            with db.cursor():
+                return db.execute(sql, params)
+    finally:
+        db.close()
 
 ##
 #
