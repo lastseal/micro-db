@@ -75,12 +75,15 @@ def connect(handle):
 #
 
 def query(sql, params):
+    logging.debug("connecting")
     db = Database()
     try:
-        logging.debug("connecting")
         with db.connect():
             with db.cursor():
-                return db.execute(sql, params)
+                logging.debug("sql: %s, params: %s", sql, params)
+                res = db.execute(sql, params)
+                logging.debug("res: %s", res)
+                return res
     finally:
         db.close()
 
