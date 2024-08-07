@@ -62,13 +62,15 @@ db = Database()
 
 def connect(handle):
     def decorator(*args, **kwargs):
+        res = None
         try:
             logging.debug("connecting")
             with db.connect():
                 with db.cursor():
-                    handle(*args, **kwargs)
+                    res = handle(*args, **kwargs)
         finally:
             db.close()
+        return None
 
     return decorator
 
