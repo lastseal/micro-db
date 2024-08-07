@@ -70,7 +70,7 @@ def connect(handle):
                     res = handle(*args, **kwargs)
         finally:
             db.close()
-        return None
+        return res
 
     return decorator
 
