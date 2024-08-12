@@ -77,7 +77,7 @@ def connect(handle):
 ##
 #
 
-def query(sql, params):
+def query(sql, params=None):
     return db.execute(sql, params)
 
 ##
